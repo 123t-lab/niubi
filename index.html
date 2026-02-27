@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会员登记系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <div class="itt">
+            <h1>会员登记系统</h1>
+            <p class="subtitle">轻松管理会员信息，自动记录消费明细，支持备份导出，方便会员维护</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <h2>登记新会员</h2>
+            <div class="form-group">
+                <label for="name">会员姓名</label>
+                <input type="text" id="name" placeholder="请输入会员姓名">
+            </div>
+            <div class="form-group">
+                <label for="phone">联系电话</label>
+                <input type="tel" id="phone" placeholder="请输入联系电话">
+            </div>
+            <div class="form-group">
+                <label for="birthday">生日</label>
+                <input type="date" id="birthday">
+            </div>
+            <button class="btn btn-primary" onclick="addMember()">登 记</button>
+            <p class="info-text">注：会员初始金额300元，每次使用扣除30元</p>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('members')">会员列表</button>
+                <button class="tab-btn" onclick="switchTab('products')">商品管理</button>
+            </div>
+
+            <div id="membersTab" class="tab-content active">
+                <div class="list-title">
+                    <h3>会员列表 <span class="member-count" id="memberCount">(0人)</span></h3>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="importMembers()">导入会员列表</button>
+                        <button class="btn btn-success" onclick="exportMembers()">导出会员列表</button>
+                    </div>
+                </div>
+                <div class="list-header">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索姓名或电话..." oninput="searchMembers()">
+                    </div>
+                </div>
+                <table class="member-list">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>电话</th>
+                            <th>生日</th>
+                            <th>剩余金额</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memberTable">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="productsTab" class="tab-content">
+                <div class="list-title">
+                    <h3>商品管理 <span class="member-count" id="productCount">(0件)</span></h3>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="addProduct()">添加商品</button>
+                        <button class="btn btn-success" onclick="importProducts()">导入商品</button>
+                        <button class="btn btn-success" onclick="exportProducts()">导出商品</button>
+                    </div>
+                </div>
+                
+                <div class="category-tabs">
+                    <button class="category-tab active" onclick="switchProductCategory('all')">全部</button>
+                    <button class="category-tab" onclick="switchProductCategory('男鞋')">男鞋</button>
+                    <button class="category-tab" onclick="switchProductCategory('女鞋')">女鞋</button>
+                    <button class="category-tab" onclick="switchProductCategory('运动鞋')">运动鞋</button>
+                </div>
+                
+                <div class="list-header">
+                    <div class="search-box">
+                        <input type="text" id="productSearchInput" placeholder="搜索商品名称或编号..." oninput="searchProducts()">
+                    </div>
+                </div>
+                <table class="member-list">
+                    <thead>
+                        <tr>
+                            <th>商品编号</th>
+                            <th>商品名称</th>
+                            <th>商品分类</th>
+                            <th>尺码号</th>
+                            <th>商品价格</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <h2>导入会员列表</h2>
+            <div class="form-group">
+                <input type="file" id="excelFile" accept=".xlsx,.xls">
+            </div>
+            <div class="info-text">
+                <strong>Excel格式要求：</strong><br>
+                第一行：姓名, 电话, 生日(NNNNYYRR格式)<br>
+                <strong>格式说明：</strong> N=年, YY=月, RR=日<br>
+                示例：张三, 13800138000, 19900101
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmImport()">开始导入</button>
+                <button class="btn btn-danger" onclick="closeImportModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>修改会员信息</h2>
+            <div class="form-group">
+                <label for="editName">会员姓名</label>
+                <input type="text" id="editName">
+            </div>
+            <div class="form-group">
+                <label for="editPhone">联系电话</label>
+                <input type="tel" id="editPhone">
+            </div>
+            <div class="form-group">
+                <label for="editBirthday">生日</label>
+                <input type="date" id="editBirthday">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmEdit()">确认修改</button>
+                <button class="btn btn-danger" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content modal-large">
+            <h2>消费历史记录</h2>
+            <div id="historyList"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-danger" onclick="closeHistoryModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <h2>填写商品信息</h2>
+            <div class="form-group">
+                <label for="productSearch">搜索商品</label>
+                <input type="text" id="productSearch" placeholder="输入商品编号或名称进行搜索..." oninput="searchProductInModal()">
+                <div id="productSearchResults" class="search-results"></div>
+                <input type="hidden" id="selectedProductId" value="">
+            </div>
+            <div class="form-group">
+                <label for="productCode">商品编号</label>
+                <input type="text" id="productCode" placeholder="请输入商品编号" readonly>
+            </div>
+            <div class="form-group">
+                <label for="productName">商品名称</label>
+                <input type="text" id="productName" placeholder="请输入商品名称" readonly>
+            </div>
+            <div class="form-group">
+                <label for="productSize">尺码号</label>
+                <input type="text" id="productSize" placeholder="请输入尺码号" readonly>
+            </div>
+            <div class="form-group">
+                <label for="productPrice">商品价格</label>
+                <input type="number" id="productPrice" placeholder="请输入商品价格" min="0" step="0.01" readonly>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmProduct()">确认使用</button>
+                <button class="btn btn-danger" onclick="closeProductModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rechargeModal" class="modal">
+        <div class="modal-content">
+            <h2>会员充值</h2>
+            <div class="form-group">
+                <label for="rechargeAmount">充值金额</label>
+                <input type="number" id="rechargeAmount" placeholder="请输入充值金额" min="10" step="10">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmRecharge()">确认充值</button>
+                <button class="btn btn-danger" onclick="closeRechargeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <h2>添加商品</h2>
+            <div class="form-group">
+                <label for="addProductCode">商品编号</label>
+                <input type="text" id="addProductCode" placeholder="请输入商品编号">
+            </div>
+            <div class="form-group">
+                <label for="addProductName">商品名称</label>
+                <input type="text" id="addProductName" placeholder="请输入商品名称">
+            </div>
+            <div class="form-group">
+                <label for="addProductCategory">商品分类</label>
+                <select id="addProductCategory">
+                    <option value="男鞋">男鞋</option>
+                    <option value="女鞋">女鞋</option>
+                    <option value="运动鞋">运动鞋</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="addProductSize">尺码号</label>
+                <input type="text" id="addProductSize" placeholder="请输入尺码号">
+            </div>
+            <div class="form-group">
+                <label for="addProductPrice">商品价格</label>
+                <input type="number" id="addProductPrice" placeholder="请输入商品价格" min="0" step="0.01">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmAddProduct()">确认添加</button>
+                <button class="btn btn-danger" onclick="closeAddProductModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="importProductModal" class="modal">
+        <div class="modal-content">
+            <h2>导入商品</h2>
+            <div class="form-group">
+                <input type="file" id="productExcelFile" accept=".xlsx,.xls">
+            </div>
+            <div class="info-text">
+                <strong>Excel格式要求：</strong><br>
+                第一行：商品编号, 商品名称, 商品分类, 尺码号, 商品价格<br>
+                <strong>分类选项：</strong> 男鞋, 女鞋, 运动鞋<br>
+                示例：001, 运动鞋A, 运动鞋, 42, 299.99
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmImportProducts()">开始导入</button>
+                <button class="btn btn-danger" onclick="closeImportProductModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editProductModal" class="modal">
+        <div class="modal-content">
+            <h2>修改商品</h2>
+            <div class="form-group">
+                <label for="editProductCode">商品编号</label>
+                <input type="text" id="editProductCode" placeholder="请输入商品编号">
+            </div>
+            <div class="form-group">
+                <label for="editProductName">商品名称</label>
+                <input type="text" id="editProductName" placeholder="请输入商品名称">
+            </div>
+            <div class="form-group">
+                <label for="editProductCategory">商品分类</label>
+                <select id="editProductCategory">
+                    <option value="男鞋">男鞋</option>
+                    <option value="女鞋">女鞋</option>
+                    <option value="运动鞋">运动鞋</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editProductSize">尺码号</label>
+                <input type="text" id="editProductSize" placeholder="请输入尺码号">
+            </div>
+            <div class="form-group">
+                <label for="editProductPrice">商品价格</label>
+                <input type="number" id="editProductPrice" placeholder="请输入商品价格" min="0" step="0.01">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmEditProduct()">确认修改</button>
+                <button class="btn btn-danger" onclick="closeEditProductModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="lunar.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
